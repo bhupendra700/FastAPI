@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from Database.model import Base
 from Database.neon import engine
 from sqlalchemy import text
+from Router.files import fileApp
 
 def check_db():
 	try:
@@ -22,10 +23,10 @@ def create_table():
 
 app = FastAPI(title="File Sharing Backend")
 
-@app.on_event("startup")
-def startup():
-	check_db()
-	create_table()
+# @app.on_event("startup")
+# def startup():
+# 	check_db()
+# 	create_table()
 
 app.add_middleware(
 	CORSMiddleware,
@@ -43,3 +44,4 @@ def check_server():
 }
 
 app.include_router(authApp , prefix="/api")
+app.include_router(fileApp , prefix="/api")
