@@ -1,14 +1,19 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {useEffect} from "react"
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import { useAuth } from "./context/AuthContext";
-import ProtectedRoute from './components/ProtectedRoute'
-import PublicRoute from './components/PublicRoute'
+import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+import { useAuthStore } from "./store/authStore";
 
 function App() {
-  const { token } = useAuth();
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
  return (
     <BrowserRouter>

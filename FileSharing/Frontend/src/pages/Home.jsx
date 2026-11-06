@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-import { useAuth } from "../context/AuthContext";
 import API from "../api/axios";
+import { useAuthStore } from "../store/authStore";
+import { useShallow } from "zustand/react/shallow";
+
 
 function Home() {
-  const { token, logout, setUser } = useAuth();
+
+const { isAuthenticated, logout, setUser } = useAuthStore(
+  useShallow((state) => ({
+    isAuthenticated: state.isAuthenticated,
+    logout: state.logout,
+    setUser: state.setUser,
+  }))
+);
 
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -17,7 +26,7 @@ function Home() {
     try {
       const { data: res } = await API.get("/api/files/all-file");
 
-      setUploadedFiles(res.data || []);
+      setUploadedFiles(res.files || []);
 
       console.log("Uploaded Files:", res.data);
 
@@ -42,7 +51,7 @@ function Home() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        if (!token) return;
+        if (!isAuthenticated) return;
 
         const { data: res } = await API.get("/api/auth/users/me");
 
@@ -67,7 +76,7 @@ function Home() {
     };
 
     initialize();
-  }, [token]);
+  }, [isAuthenticated]);
 
   // Select files
   const handleFileChange = (e) => {
@@ -175,6 +184,37 @@ function Home() {
         return "📁";
     }
   };
+
+  // Delete uploaded file
+const handleDeleteFile = async (filename , fileId) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this file?"
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    const { data: res } = await API.delete(
+      `/api/files/file/${filename}/${fileId}`
+    );
+
+    console.log("File Deleted:", res);
+
+    await fetchUploadedFiles();
+
+    alert("File deleted successfully!");
+
+  } catch (error) {
+    console.error(
+      "Delete Error:",
+      error.response?.data || error.message
+    );
+
+    setError(
+      error.response?.data?.message || "Unable to delete file"
+    );
+  }
+};
 
   return (
     <div>
@@ -311,6 +351,14 @@ function Home() {
               <h2>My Uploaded Files</h2>
               <p>Manage and access all your uploaded files.</p>
             </div>
+
+            <button
+              type="button"
+              className="browse-btn"
+              onClick={fetchUploadedFiles}
+            >
+              ↻ Refresh Files
+            </button>
           </div>
 
           {/* Storage Statistics */}
@@ -403,8 +451,18 @@ function Home() {
                       >
                         Open ↗
                       </button>
-                    </div>
 
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFile(file.name , file.id);
+                        }}
+                        className="delete-btn"
+                        >
+                          Delete
+                      </button>
+                    </div>
                   </div>
 
                 ))}

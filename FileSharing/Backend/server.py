@@ -1,10 +1,12 @@
-from fastapi import FastAPI , APIRouter
+from Middleware.rate_limiter import RateLimiter
+from fastapi import Depends, FastAPI , APIRouter
 from Router.auth import authApp
 from fastapi.middleware.cors import CORSMiddleware
 from Database.model import Base
 from Database.neon import engine
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
-from Router.files import fileApp
+from Router.files import UPLOAD_DIR, fileApp
 
 def check_db():
 	try:
@@ -44,4 +46,9 @@ def check_server():
 }
 
 app.include_router(authApp , prefix="/api")
-app.include_router(fileApp , prefix="/api")
+
+# URL -> http://127.0.0.0:8000/uploads/media/{filename}
+app.mount('/uploads/media' , StaticFiles(directory=UPLOAD_DIR) , name="Uploaded_Media")
+
+limiter = RateLimiter(requests_limit=5, time_window=60)
+app.include_router(fileApp , prefix="/api" , dependencies=[Depends(limiter)])

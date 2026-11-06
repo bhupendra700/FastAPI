@@ -1,12 +1,18 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../store/authStore";
+import { useShallow } from "zustand/react/shallow";
 
 function PublicRoute({ children }) {
-  const { token, loading } = useAuth();
+  const { isAuthenticated, loading } = useAuthStore(
+    useShallow((state)=>({
+      isAuthenticated: state.isAuthenticated,
+      loading: state.loading
+    }))
+  );
 
   if (loading) return <h1>Checking authentication...</h1>;
 
-  return token ? <Navigate to="/" replace /> : children;
+  return isAuthenticated ? <Navigate to="/" replace /> : children;
 }
 
 export default PublicRoute;

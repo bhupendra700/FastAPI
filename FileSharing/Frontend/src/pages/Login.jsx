@@ -2,13 +2,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import API from '../api/axios'
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../store/authStore";
+
 
 function Login() {
   const [email, setEmail] = useState("bhupendra7021@gmail.com");
   const [password, setPassword] = useState("12345678");
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const login = useAuthStore(state => state.login);
 
   const handleLogin = async (e) => {
     e.preventDefault();

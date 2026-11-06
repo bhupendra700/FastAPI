@@ -1,10 +1,16 @@
 
 import { Link } from "react-router-dom";
 import { LogOut } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../store/authStore";
+import { useShallow } from "zustand/react/shallow";
 
 function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore(
+    useShallow((state)=>({
+      user: state.user,
+      logout: state.logout
+    }))
+  );
 
   return (
     <nav className="navbar">

@@ -1,20 +1,18 @@
 from typing import List
-from fastapi import APIRouter, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 import shutil
 import os
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from Middleware.verify_user import verifyUser
 
 fileApp = APIRouter(prefix="/files" , tags=["Files"])
 
 UPLOAD_DIR="uploads"
 
-# Make directory to upload files
 if not os.path.exists(UPLOAD_DIR):
         os.makedirs(UPLOAD_DIR)
-
-# URL -> http://127.0.0.0:8000/files/{filename} 
-fileApp.mount("/filess" , StaticFiles(directory=UPLOAD_DIR) , name="static")
-
+ 
 @fileApp.post('/upload')
 async def uploadFile(files: List[UploadFile] = File(...)):
     uploaded_files = []
@@ -42,44 +40,59 @@ async def uploadFile(files: List[UploadFile] = File(...)):
         "files": uploaded_files
     }
 
-
-@fileApp.get('/view/{filename}')
-def getFile(filename: str):
-	file_path = os.path.join(UPLOAD_DIR , filename)
-
-	if not file_path:
-		raise HTTPException(
-			status_code=status.HTTP_400_BAD_REQUEST,
-			detail="File not exists"
-			)
-
-	return {
-	"message": "File retrive successfully",
-	"file_url" : f"http://127.0.0.0:8000/api/files/filess/{filename}"
-}
-
 @fileApp.get('/all-file')
 def get_All_File():
-	uploadedFiles = [
-    {
-      "id": 1,
-      "name": "Resume.pdf",
-      "size": 2.5,
-      "type": "PDF",
-      "date": "04 Nov 2026",
-      "url": "https://example.com/resume.pdf"
-    },
-    {
-      "id": 2,
-      "name": "Image.png",
-      "size": 1.2,
-      "type": "Image",
-      "date": "03 Nov 2026",
-      "url": "https://example.com/image.png"
+    if not os.path.exists(UPLOAD_DIR):
+        return {
+            "success": True,
+            "total_files": 0,
+            "files": []
+        }
+
+    file_list = [f for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f))]
+
+    final_file_list = []
+
+    for i, f in enumerate(file_list):
+        file_path = os.path.join(UPLOAD_DIR, f)
+        file_size_bytes = os.path.getsize(file_path)
+
+        file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
+
+        final_file_list.append({
+            "id": i + 1,
+            "name": f,
+            "size": file_size_mb,
+            "type": f.split(".")[-1] if "." in f else "unknown",
+            "url": f"http://localhost:8000/uploads/media/{f}"
+        })
+
+    return {
+        "success": True,
+        "total_files": len(file_list),
+        "files": final_file_list
     }
-  ]
-	
-	return {
-  "message": "Files fetched successfully",
-  "data": uploadedFiles 
-}
+
+@fileApp.delete('/file/{filename}/{id}')
+def deleteFile(filename: str, id: str):
+    if not (id and filename):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "File not found"}  # <-- 2. 'details' ki jagah 'content' hoga
+        )
+
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    file_exists = os.path.isfile(file_path)
+
+    if not file_exists:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": "File not found"}
+        )
+
+    # File delete karna
+    os.remove(file_path)
+
+    return {
+        "message": "File deleted successfully!"
+    }

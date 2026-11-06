@@ -156,6 +156,11 @@ def Access_Refresh_Token_Rotation(request: Request, response: Response):
 			detail="Refresh Token is expired"
 		)
 
+	# expiry_date = datetime.fromtimestamp(payload.get("exp"))
+	# current_date = datetime.now()
+	# time_left = expiry_date - current_date
+	# print("Remaining Time (Days, Hours, Minutes):", time_left)
+
 	tokenData = {"user_id": payload.get('user_id')}
 	accessToken = Create_Access_Token(tokenData, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
 
