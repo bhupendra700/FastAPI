@@ -25,10 +25,10 @@ def create_table():
 
 app = FastAPI(title="File Sharing Backend")
 
-# @app.on_event("startup")
-# def startup():
-# 	check_db()
-# 	create_table()
+@app.on_event("startup")
+def startup():
+	check_db()
+	create_table()
 
 app.add_middleware(
 	CORSMiddleware,
